@@ -41,13 +41,6 @@ def main(tg: MyTg, db: MySqlite3, logger: MyLogger) -> None:
 
 if __name__ == "__main__":
     user_data_dir = str(Path("./user_data/chromium").resolve())
-    extension_names = [
-        # "-VPN-Chrome-Planet-VPN-Chrome",
-        # "-VPN-Free-VPN-1VPN-Chrome",
-        # "PureVPN-Proxy-VPN-Chrome-Chrome",
-        "-VPN-Proxy-YouTube-Browsec-VPN-Chrome",  # job
-        # "-VPN-Chrome-VPN-VeePN-Chrome",
-    ]
     extension_path = str(Path("./extensions/ext").resolve())
     extension_names = utils.get_list_of_extensions(extension_path)
 
@@ -73,10 +66,10 @@ if __name__ == "__main__":
         main(tg, db, logger)
     except PlaywrightTimeoutError as e:
         # таймаут при навигации
-        logger.exception(f"Таймаут навигации на {tg.tg_url}: {e}")
+        logger.exception(f"Таймаут навигации на {tg.tg_url}: {e.message}")
     except PlaywrightError as e:
         # другие ошибки Playwright (сеть, редиректы, etc.)
-        logger.exception(f"Ошибка навигации на {tg.tg_url}: {e}")
+        logger.exception(f"Ошибка навигации на {tg.tg_url}: {e.message}")
     except Exception as e:
         # другие ошибки
         logger.exception(f"Какая то другая ошибка: {e}")
