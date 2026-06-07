@@ -49,6 +49,8 @@ if __name__ == "__main__":
         # "-VPN-Chrome-VPN-VeePN-Chrome",
     ]
     extension_path = str(Path("./extensions/ext").resolve())
+    extension_names = utils.get_list_of_extensions(extension_path)
+
     tg_url = "https://web.telegram.org"
     exclude_chats = ["Telegram", "Saved Messages"]
     db_path = str(Path("./db/database.db").resolve())

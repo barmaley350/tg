@@ -19,3 +19,4 @@ playwright install chromium
 ```
 drwxrwxr-x  9 home home 4.0K Jun  8 01:13 ./extensions/ext/-VPN-Proxy-YouTube-Browsec-VPN-Chrome/
 ```
+Настрока расширения будет производится при первом запуске. Все настройки сохранятся при последующих запусках.

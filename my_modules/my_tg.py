@@ -14,7 +14,7 @@ class MyTg:
         *,
         user_data_dir: str,
         extension_path: str,
-        extension_names: list[str],
+        extension_names: str,
         tg_url: str,
         exclude_chats: list[str],
         recordings_path: str,
@@ -28,7 +28,7 @@ class MyTg:
         :param extension_path: _description_
         :type extension_path: str
         :param extension_names: _description_
-        :type extension_names: list[str]
+        :type extension_names: str
         :param tg_url: _description_
         :type tg_url: str
         :param exclude_chats: _description_
@@ -53,19 +53,6 @@ class MyTg:
         self.tg_chats = []
         self.logger = MyLogger(logger_name=__name__, is_logging=is_logging)
 
-    def _generate_extension_paths(self) -> str:
-        """_summary_.
-
-        :return: _description_
-        :rtype: str
-        """
-        rez = ", ".join([
-            f"{self.extension_path}/{extension_name}"
-            for extension_name in self.extension_names
-        ])
-
-        return rez
-
     def _exclude_chats(self, chat: str) -> bool:
         """_summary_.
 
@@ -86,8 +73,8 @@ class MyTg:
             "user_data_dir": self.user_data_dir,
             "headless": False,
             "args": [
-                f"--disable-extensions-except={self._generate_extension_paths()}",
-                f"--load-extension={self._generate_extension_paths()}",
+                f"--disable-extensions-except={self.extension_names}",
+                f"--load-extension={self.extension_names}",
             ],
         }
         if self.is_recording:

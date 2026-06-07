@@ -2,6 +2,7 @@ import random
 from datetime import datetime, timedelta
 
 from my_modules.my_sqlite3 import MySqlite3
+from pathlib import Path
 
 
 def make_charts_list(
@@ -48,3 +49,16 @@ def random_waiting(min_time: int = 5, max_time: int = 15) -> int:
     :rtype: int
     """
     return random.randint(min_time, max_time)  # noqa: S311
+
+
+def get_list_of_extensions(path_to_extensions: str) -> str:
+    """_summary_.
+
+    :param path_to_extensions: _description_
+    :type path_to_extensions: str
+    :return: _description_
+    :rtype: list[str]
+    """
+    return ",".join([
+        str(p.resolve()) for p in Path(path_to_extensions).iterdir() if p.is_dir()
+    ])
