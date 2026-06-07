@@ -1,80 +1,55 @@
-import time
 from pathlib import Path
 
 # Change playwright standart import to patchright
-from patchright.sync_api import expect, sync_playwright
+from patchright.sync_api import Error, sync_playwright
+from patchright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from my_modules import my_sqlite3
-
-TG_WEB = "https://web.telegram.org"
-CHAT_NAME = "Python Job | Вакансии | Стажировки"
-MESSAGE_TEXT = "Это тестовое сообщение, отправленное через Playwright"
-
-user_data_dir = Path("./user_data/chromium").resolve()
-extension_name = "-VPN-Proxy-YouTube-Browsec-VPN-Chrome"
-extension_path = Path(f"./extensions/ext/{extension_name}").resolve()
+from my_modules import utils
+from my_modules.my_sqlite3 import MySqlite3
+from my_modules.my_tg import MyTg
 
 
-def send_telegram_message():
-    with sync_playwright() as p:
-        # Важно: headless=False, чтобы видеть, что происходит, и при необходимости вручную подтвердить вход
-        browser = p.chromium.launch_persistent_context(
-            user_data_dir,
-            headless=False,
-            args=[
-                f"--disable-extensions-except={extension_path}",
-                f"--load-extension={extension_path}",
-            ],
-        )
-        page = browser.new_page()
-        page.goto(
-            TG_WEB,
-            timeout=120000,
-            wait_until="domcontentloaded",
-        )
-        locator = page.locator("span[data-peer-id]")
-        expect(locator).to_have_count(1, timeout=15000)
-        count = locator.count()
-        print("Найдено элементов:", count)
-        print(locator.all_inner_texts())
-        time.sleep(200)
-        # На этом этапе пользователь должен вручную войти в аккаунт (QR/код)
-        # Скрипт ждёт, пока появится список чатов (простой эвристический индикатор входа)
-        page.wait_for_selector(".chatlist", timeout=180000)
+def main(tg: MyTg, db: MySqlite3) -> None:
+    """_summary_.
 
-        # Ищем чат по тексту (это хрупкий селектор — может сломаться при обновлении Telegram)
-        chat_row = page.locator("a.row.row-clickable.chatlist-chat").filter(
-            has=page.locator(".peer-title").filter(has_text=CHAT_NAME)
-        )
-        # chat_row.first.wait_for(state="visible", timeout=180000)
-        chat_row.first.click()
+    :param tg: _description_
+    :type tg: MyTg
+    :param db: _description_
+    :type db: MySqlite3
+    """
+    with sync_playwright() as pw:
+        tg.make_browser(pw)
+        tg.get_tg_web_page()
+        tg_chats = tg.get_tg_chats()
+        tg_chats_db = db.get_tg_chats()
+        chats = utils.make_charts_list(tg_chats, tg_chats_db, db)
 
-        last_group = page.locator(".bubbles-group.bubbles-group-last")
-        # last_group.first.wait_for(
-        #     state="visible", timeout=30000
-        # )  # ждём, пока подгрузится
-        last_group.first.scroll_into_view_if_needed()
-        page.wait_for_timeout(500)  # даём время на завершение анимации скролла
-
-        replies_button = last_group.first.locator(".replies.replies-footer")
-        # Ждём, пока он станет кликабельным, и кликаем
-        replies_button.click()
-        # # Ждём появления поля ввода
-        # input_area = page.locator('textarea[data-testid="MessageInput"]')
-        # input_area.wait_for(state="visible", timeout=30000)
-
-        # input_area.click()
-        # input_area.fill(MESSAGE_TEXT)
-        # input_area.press("Enter")
-
-        time.sleep(30)  # небольшая пауза, чтобы Telegram успел отправить
-
-        browser.close()
+        if chats:
+            tg.send_message(chats)
 
 
 if __name__ == "__main__":
-    db_path = Path("./db/database.db").resolve()
-    tg_chats = my_sqlite3.MySqlite3(str(db_path)).get_chats()
-    print(tg_chats)
+    user_data_dir = str(Path("./user_data/chromium").resolve())
+    extension_names = [
+        "-VPN-Proxy-YouTube-Browsec-VPN-Chrome",
+        # "-VPN-Chrome-VPN-VeePN-Chrome",
+    ]
+    extension_path = str(Path("./extensions/ext").resolve())
+    tg_url = "https://web.telegram.org"
+    exclude_chats = ["Telegram", "Saved Messages"]
+    db_path = str(Path("./db/database.db").resolve())
 
-    send_telegram_message()
+    tg = MyTg(user_data_dir, extension_path, extension_names, tg_url, exclude_chats)
+    db = MySqlite3(db_path)
+
+    try:
+        main(tg, db)
+    except PlaywrightTimeoutError as e:
+        # таймаут при навигации
+        print(f"Таймаут навигации на {tg.tg_url}")
+    except Error as e:
+        # другие ошибки Playwright (сеть, редиректы, etc.)
+        print(f"Ошибка навигации на {tg.tg_url}: {e}")
+    except Exception as e:
+        # другие ошибки
+        print(f"Какая то другая ошибка: {e}")

@@ -5,7 +5,7 @@ class MySqlite3:
     def __init__(self, db: str):
         self.db = db
 
-    def get_chats(self) -> list:
+    def get_tg_chats(self) -> list:
         """Get tg chats from db."""
         with sqlite3.connect(self.db) as conn:
             conn.row_factory = sqlite3.Row
