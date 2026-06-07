@@ -2,7 +2,9 @@ import time
 from pathlib import Path
 
 # Change playwright standart import to patchright
-from patchright.sync_api import sync_playwright
+from patchright.sync_api import expect, sync_playwright
+
+from my_modules import my_sqlite3
 
 TG_WEB = "https://web.telegram.org"
 CHAT_NAME = "Python Job | Вакансии | Стажировки"
@@ -30,7 +32,12 @@ def send_telegram_message():
             timeout=120000,
             wait_until="domcontentloaded",
         )
-
+        locator = page.locator("span[data-peer-id]")
+        expect(locator).to_have_count(1, timeout=15000)
+        count = locator.count()
+        print("Найдено элементов:", count)
+        print(locator.all_inner_texts())
+        time.sleep(200)
         # На этом этапе пользователь должен вручную войти в аккаунт (QR/код)
         # Скрипт ждёт, пока появится список чатов (простой эвристический индикатор входа)
         page.wait_for_selector(".chatlist", timeout=180000)
@@ -66,4 +73,8 @@ def send_telegram_message():
 
 
 if __name__ == "__main__":
+    db_path = Path("./db/database.db").resolve()
+    tg_chats = my_sqlite3.MySqlite3(str(db_path)).get_chats()
+    print(tg_chats)
+
     send_telegram_message()
