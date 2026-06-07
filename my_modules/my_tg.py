@@ -6,16 +6,19 @@ import time
 from patchright.sync_api import BrowserContext, Page, Playwright
 
 from . import utils
+from .my_logger import MyLogger
 
 
 class MyTg:
     def __init__(
         self,
+        *,
         user_data_dir: str,
         extension_path: str,
         extension_names: list[str],
         tg_url: str,
         exclude_chats: list[str],
+        is_logging: bool = False,
     ) -> None:
         """_summary_.
 
@@ -23,10 +26,14 @@ class MyTg:
         :type user_data_dir: str
         :param extension_path: _description_
         :type extension_path: str
+        :param extension_names: _description_
+        :type extension_names: list[str]
         :param tg_url: _description_
         :type tg_url: str
         :param exclude_chats: _description_
         :type exclude_chats: list[str]
+        :param logger: _description_, defaults to False
+        :type logger: bool, optional
         """
         self.browser: BrowserContext | None = None
         self.page: Page | None = None
@@ -36,6 +43,7 @@ class MyTg:
         self.tg_url = tg_url
         self.exclude_chats = exclude_chats
         self.tg_chats = []
+        self.logger = MyLogger(logger_name=__name__, is_logging=is_logging)
 
     def _generate_extension_paths(self) -> str:
         """_summary_.
@@ -47,7 +55,7 @@ class MyTg:
             f"{self.extension_path}/{extension_name}"
             for extension_name in self.extension_names
         ])
-        print(rez)
+
         return rez
 
     def _exclude_chats(self, chat: str) -> bool:
@@ -82,6 +90,7 @@ class MyTg:
         """
         if self.browser is not None:
             self.page = self.browser.new_page()
+            self.logger.info(f"Открываем страницу {self.tg_url}")
             self.page.goto(
                 self.tg_url,
                 timeout=120000,
@@ -96,8 +105,8 @@ class MyTg:
             tab = self.page.locator(".menu-horizontal-div-item", has_text="job")
             if tab.is_visible():
                 tab.click()
-            # else:
-            #     raise ValueError(f"{tab} is not visible")
+            else:
+                self.logger.warning("Нет вкладки job")
 
             self.page.wait_for_selector(
                 "div.chatlist-top ul.chatlist a.chatlist-chat", timeout=10000
@@ -129,6 +138,7 @@ class MyTg:
         if self.page is not None:
             self.page.wait_for_selector(".chatlist", timeout=180000)
             for chat_name, chat_message in d.items():
+                self.logger.info(f"Обрабатываем группу {chat_name}")
                 chat_row = self.page.locator(
                     "div.chatlist-top ul.chatlist a.chatlist-chat"
                 ).filter(
