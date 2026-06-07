@@ -1,8 +1,7 @@
+# ruff: noqa: G004
 """Вспомогательный класс для работы с Tg."""
 
 # Change playwright standart import to patchright
-import time
-
 from patchright.sync_api import BrowserContext, Page, Playwright
 
 from . import utils
@@ -18,7 +17,9 @@ class MyTg:
         extension_names: list[str],
         tg_url: str,
         exclude_chats: list[str],
+        recordings_path: str,
         is_logging: bool = False,
+        is_recording: bool = False,
     ) -> None:
         """_summary_.
 
@@ -32,14 +33,21 @@ class MyTg:
         :type tg_url: str
         :param exclude_chats: _description_
         :type exclude_chats: list[str]
-        :param logger: _description_, defaults to False
-        :type logger: bool, optional
+        :param recordings_path: _description_
+        :type recordings_path: str
+        :param is_logging: _description_, defaults to False
+        :type is_logging: bool, optional
+        :param is_recording: _description_, defaults to False
+        :type is_recording: bool, optional
         """
         self.browser: BrowserContext | None = None
         self.page: Page | None = None
+        self.context: BrowserContext | None = None
         self.user_data_dir = user_data_dir
         self.extension_path = extension_path
         self.extension_names = extension_names
+        self.is_recording = is_recording
+        self.recordings_path = recordings_path
         self.tg_url = tg_url
         self.exclude_chats = exclude_chats
         self.tg_chats = []
@@ -68,20 +76,26 @@ class MyTg:
         """
         return chat not in self.exclude_chats
 
-    def make_browser(self, p: Playwright) -> None:
+    def get_browser(self, p: Playwright) -> BrowserContext:
         """_summary_.
 
         :param p: _description_
         :type p: Playwright
         """
-        self.browser = p.chromium.launch_persistent_context(
-            self.user_data_dir,
-            headless=False,
-            args=[
+        params = {
+            "user_data_dir": self.user_data_dir,
+            "headless": False,
+            "args": [
                 f"--disable-extensions-except={self._generate_extension_paths()}",
                 f"--load-extension={self._generate_extension_paths()}",
             ],
-        )
+        }
+        if self.is_recording:
+            params["record_video_dir"] = self.recordings_path
+            params["record_video_size"] = {"width": 1920, "height": 1080}
+
+        self.browser = p.chromium.launch_persistent_context(**params)
+        return self.browser
 
     def get_tg_web_page(self) -> None:
         """_summary_.
@@ -137,8 +151,13 @@ class MyTg:
         """
         if self.page is not None:
             self.page.wait_for_selector(".chatlist", timeout=180000)
-            for chat_name, chat_message in d.items():
-                self.logger.info(f"Обрабатываем группу {chat_name}")
+            self.logger.info("Начинаем отправку сообщений")
+            self.logger.info(f"Всего групп {len(d)}")
+            for idx, (chat_name, chat_message) in enumerate(d.items(), start=1):
+                delay = utils.random_waiting()
+                self.logger.info(
+                    f"#{idx} Задержка {delay} сек. Обрабатываем группу {chat_name}."
+                )
                 chat_row = self.page.locator(
                     "div.chatlist-top ul.chatlist a.chatlist-chat"
                 ).filter(
@@ -152,4 +171,4 @@ class MyTg:
                 if button.is_visible():
                     button.click()
 
-                self.page.wait_for_timeout(utils.random_waiting() * 1000)
+                self.page.wait_for_timeout(delay * 1000)

@@ -1,8 +1,12 @@
+"""Main."""
+
 from pathlib import Path
 
-# Change playwright standart import to patchright
-from patchright.sync_api import Error, sync_playwright
+from patchright.sync_api import Error as PlaywrightError
 from patchright.sync_api import TimeoutError as PlaywrightTimeoutError
+
+# Change playwright standart import to patchright
+from patchright.sync_api import sync_playwright
 
 from my_modules import utils
 from my_modules.my_logger import MyLogger
@@ -19,7 +23,7 @@ def main(tg: MyTg, db: MySqlite3, logger: MyLogger) -> None:
     :type db: MySqlite3
     """
     with sync_playwright() as pw:
-        tg.make_browser(pw)
+        browser = tg.get_browser(pw)
         logger.info(f"Браузер запущен на {tg.tg_url}")
 
         tg.get_tg_web_page()
@@ -31,6 +35,8 @@ def main(tg: MyTg, db: MySqlite3, logger: MyLogger) -> None:
 
         if chats:
             tg.send_message(chats)
+
+        browser.close()
 
 
 if __name__ == "__main__":
@@ -46,6 +52,7 @@ if __name__ == "__main__":
     tg_url = "https://web.telegram.org"
     exclude_chats = ["Telegram", "Saved Messages"]
     db_path = str(Path("./db/database.db").resolve())
+    recordings_path = str(Path("./recordings").resolve())
 
     tg = MyTg(
         user_data_dir=user_data_dir,
@@ -53,6 +60,8 @@ if __name__ == "__main__":
         extension_names=extension_names,
         tg_url=tg_url,
         exclude_chats=exclude_chats,
+        recordings_path=recordings_path,
+        is_recording=False,
         is_logging=True,
     )
     db = MySqlite3(db_path)
@@ -62,10 +71,10 @@ if __name__ == "__main__":
         main(tg, db, logger)
     except PlaywrightTimeoutError as e:
         # таймаут при навигации
-        print(f"Таймаут навигации на {tg.tg_url}")
-    except Error as e:
+        logger.exception(f"Таймаут навигации на {tg.tg_url}: {e}")
+    except PlaywrightError as e:
         # другие ошибки Playwright (сеть, редиректы, etc.)
-        print(f"Ошибка навигации на {tg.tg_url}: {e}")
+        logger.exception(f"Ошибка навигации на {tg.tg_url}: {e}")
     except Exception as e:
         # другие ошибки
-        print(f"Какая то другая ошибка: {e}")
+        logger.exception(f"Какая то другая ошибка: {e}")

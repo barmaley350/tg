@@ -11,5 +11,6 @@ wheels/
 
 # 
 node_modules
-extensions
-user_data
+extensions/zip
+extensions/ext/*
+user_data/*
