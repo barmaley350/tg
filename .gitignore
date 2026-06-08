@@ -9,7 +9,12 @@ wheels/
 # Virtual environments
 .venv
 
+# Ruff 
+.ruff_cache
 # 
 extensions/zip
 extensions/ext/*
 user_data/*
+
+#
+dell.txt

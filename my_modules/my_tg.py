@@ -71,6 +71,7 @@ class MyTg:
         """
         params = {
             "user_data_dir": self.user_data_dir,
+            # "channel": "chrome",
             "headless": False,
             "args": [
                 f"--disable-extensions-except={self.extension_names}",
@@ -154,6 +155,10 @@ class MyTg:
                 )
                 chat_row.click()
                 # Нажимаем на кнопку чтобы проматать к последнему сообщению
+                # 1. Сколько кнопок с таким классом найдено?
+                count = self.page.locator("button.bubbles-go-down").count()
+                self.logger.warning(f"Найдено кнопок: {count}")
+
                 button = self.page.locator("button.bubbles-go-down")
                 if button.is_visible():
                     button.click()

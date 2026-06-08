@@ -11,6 +11,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "pylint>=4.0.5",
     "ruff>=0.15.16",
 ]
 
@@ -36,3 +37,25 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 # Prefer single quotes over double quotes.
 quote-style = "double"
 preview = true
+
+
+[tool.pylint]
+max-line-length = 88
+
+[tool.pylint.messages_control]
+disable = [
+  "missing-docstring",
+  "too-many-branches",
+  "too-many-arguments",
+  "invalid-name",
+]
+
+[tool.pylint.basic]
+variable-rgx = "^[a-z_][a-z0-9_]*$"
+class-rgx = "^[A-Z][a-zA-Z0-9]+$"
+function-rgx = "^[a-z_][a-z0-9_]*$"
+
+[tool.pylint.design]
+max-args = 5
+max-attributes = 7
+max-public-methods = 20

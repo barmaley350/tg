@@ -1,8 +1,8 @@
 import random
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from my_modules.my_sqlite3 import MySqlite3
-from pathlib import Path
 
 
 def make_charts_list(
